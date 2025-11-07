@@ -17,12 +17,13 @@ def simulate_for_observed(obs_data, obs_id, n_simulations):
         rng = np.random.default_rng(seed)
         dist_type = rng.integers(0, 3)
         if dist_type == 0:
-            sim_data = np.random.exponential(scale=1.0, size=len(obs_data))
-            param = np.mean(sim_data)
+            theta = rng.exponential(scale=1.0)
+            sim_data = np.random.exponential(scale=theta, size=len(obs_data))
+            param = theta
         elif dist_type == 1:
-            mu = rng.normal(0, 1)
-            sim_data = np.random.lognormal(mean=mu, sigma=1.0, size=len(obs_data))
-            param = mu
+            theta = rng.normal(0, 1)
+            sim_data = np.random.lognormal(mean=theta, sigma=1.0, size=len(obs_data))
+            param = theta
         else:
             theta = rng.exponential(scale=1.0)
             sim_data = np.random.gamma(shape=2.0, scale=1/theta, size=len(obs_data))

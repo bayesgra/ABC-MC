@@ -1,10 +1,8 @@
-# expo_family_example_NN.py
 import os, sys, random, numpy as np, pandas as pd, tensorflow as tf
 from tensorflow.keras import layers, models, Input
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 
-# Import abc_utils from parent directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def set_seed(seed=12345):
@@ -18,7 +16,6 @@ def simulate_datasets(num_datasets=10**6, sample_size=100):
     gamma_samples = np.random.gamma(shape=2.0, scale=1.0, size=(n_per_model, sample_size))
 
     X = np.vstack([expo_samples, logn_samples, gamma_samples])
-    X = (X - np.mean(X, axis=1, keepdims=True)) / np.std(X, axis=1, keepdims=True)
 
     y_class = np.concatenate([np.zeros((n_per_model, 1)), np.ones((n_per_model, 1)), np.full((n_per_model, 1), 2)])
     y_class = to_categorical(y_class, num_classes=3)
@@ -57,7 +54,6 @@ def predict_observed(model_path, observed_path, output_dir):
     model = tf.keras.models.load_model(model_path)
     print(f"Loading observed datasets from {observed_path}")
     X_new = np.load(observed_path, allow_pickle=True)['observed_datasets']
-    X_new = (X_new - np.mean(X_new, axis=1, keepdims=True)) / np.std(X_new, axis=1, keepdims=True)
     pred_class_probs, pred_params = model.predict(X_new, verbose=1)
     os.makedirs(output_dir, exist_ok=True)
     pd.DataFrame(pred_class_probs, columns=['NN_Prob_Model0', 'NN_Prob_Model1', 'NN_Prob_Model2']).to_csv(os.path.join(output_dir, 'expo_family_exp_NN_probabilities.csv'), index=False)
@@ -93,7 +89,7 @@ def main():
         train_model(model, X, y_class, y_params, model_output, args.epochs, args.batch_size)
 
     if args.predict:
-        model_path = os.path.join(model_output, 'expofamily_example_exp_NN_model.h5')
+        model_path = os.path.join(model_output, 'expo_family_model.h5')
         if not os.path.exists(observed_path):
             raise FileNotFoundError(f"Observed data not found at {observed_path}. Run expo_family_example_distanceABC.py first.")
         predict_observed(model_path, observed_path, model_output)

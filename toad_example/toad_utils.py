@@ -82,26 +82,71 @@ def toad_movement_sample(model="random", alpha=1.5, gamma=0.2, p0=0.3,
 # Summary statistics
 # ================================================================
 
-def compute_displacement_summaries(positions):
+import numpy as np
+
+def compute_displacement_summaries(Y: np.ndarray, lags=(1, 2, 4, 8), return_threshold=10.0):
     """
-    Compute simple summary statistics from simulated toad trajectories.
+    Compute 48 summary statistics for a single toad simulation matrix Y (num_days x num_toads).
+
+    For each lag in {1, 2, 4, 8}:
+      - Compute displacements |Y_{i+lag, j} - Y_{i,j}|
+      - Count returns: displacements <= 10
+      - For non-returns (>=10), compute deciles (0.0, 0.1, ..., 1.0)
+      - Take 11 log-differences of consecutive deciles
+      => 12 stats per lag (1 return count + 11 decile log-diffs)
+    Returns
+    -------
+    np.ndarray of shape (48,)
     """
-    displacements = np.diff(positions, axis=1)
-    mean_disp = np.mean(np.abs(displacements), axis=1)
-    var_disp = np.var(displacements, axis=1)
-    return np.vstack((mean_disp, var_disp)).T
+    stats = []
+
+    for lag in lags:
+        # displacements for this lag
+        disp = np.abs(Y[lag:, :] - Y[:-lag, :]).ravel()
+
+        # return / non-return split
+        is_return = disp <= return_threshold
+        n_return = np.sum(is_return)
+        non_returns = disp[~is_return]
+
+        if non_returns.size < 2:
+            # not enough data to compute quantiles
+            qdiffs = np.full(11, np.nan)
+        else:
+            # quantiles at 0, 0.1, ..., 1
+            qs = np.linspace(0, 1, 11)
+            quantiles = np.quantile(non_returns, qs)
+            # consecutive log differences, safe against zeros
+            qdiffs = np.full(11, np.nan)
+            for i in range(len(quantiles) - 1):
+                diff = quantiles[i + 1] - quantiles[i]
+                qdiffs[i] = np.log(diff) if diff > 0 else np.nan
+
+        stats.extend([n_return] + qdiffs.tolist())
+
+    return np.array(stats, dtype=float)
 
 
-def summarise_sample(position_sample):
+def get_statistics(simulations: np.ndarray):
     """
-    Summarize the trajectory sample by mean and variance of displacements.
-    """
-    summaries = compute_displacement_summaries(position_sample)
-    return np.mean(summaries, axis=0)
+    Compute 48-element summary vector for each simulated dataset.
 
+    Parameters
+    ----------
+    simulations : np.ndarray
+        Array of shape (n_sim, num_days, num_toads)
 
-def get_statistics(simulations):
+    Returns
+    -------
+    np.ndarray
+        Array of shape (n_sim, 48)
     """
-    Convert multiple trajectory samples into a matrix of summary statistics.
-    """
-    return np.array([summarise_sample(sim) for sim in simulations])
+    n_sim = simulations.shape[0]
+    summaries = np.zeros((n_sim, 48))
+    for i in range(n_sim):
+        try:
+            summaries[i, :] = compute_displacement_summaries(simulations[i])
+        except Exception:
+            summaries[i, :] = np.nan
+    return summaries
+

@@ -113,7 +113,7 @@ def summarize_results(folder_path):
 
     df_summary = pd.DataFrame(summary_rows)
     df_summary.to_csv(os.path.join(folder_path, "toad_QDA_summary.csv"), index=False)
-    print(f"✅ Saved full probability and parameter summary to {folder_path}/toad_QDA_summary.csv")
+    print(f" Saved full probability and parameter summary to {folder_path}/toad_QDA_summary.csv")
 
     # Save simple CSVs for backwards compatibility
     df_summary[["ObsID", "Prob_Model0", "Prob_Model1", "Prob_Model2"]].to_csv(
@@ -140,7 +140,7 @@ def main():
     observed = np.load(observed_path, allow_pickle=True)["observed_datasets"]
 
     for obs_id, obs_data in enumerate(observed):
-        results = simulate_for_observed(obs_data, obs_id, n_simulations=10000)
+        results = simulate_for_observed(obs_data, obs_id, n_simulations=100000)
         filename = os.path.join(RESULTS_DIR, f"qda_simulations_obs_{obs_id:03d}.csv")
         with open(filename, "w", newline="") as f:
             writer = csv.writer(f)
@@ -148,7 +148,7 @@ def main():
             writer.writerows(results)
 
     summarize_results(RESULTS_DIR)
-    print(f"✅ All QDA results saved to {RESULTS_DIR}")
+    print(f" All QDA results saved to {RESULTS_DIR}")
 
 
 if __name__ == "__main__":

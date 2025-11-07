@@ -20,7 +20,7 @@ def generate_observed_datasets(n_observed=100, sample_size=100, seed=42, save_pa
     np.random.seed(seed)
     observed_datasets = np.random.exponential(scale=2.0, size=(n_observed, sample_size))
     np.savez(save_path, observed_datasets=observed_datasets)
-    print(f"✅ Saved {n_observed} observed datasets to '{save_path}'")
+    print(f" Saved {n_observed} observed datasets to '{save_path}'")
     return observed_datasets
 
 def simulate_datasets(n_sim=10**6, sample_size=100):
