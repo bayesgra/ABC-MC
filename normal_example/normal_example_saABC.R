@@ -9,7 +9,10 @@ set.seed(1234)
 # ================================================================
 data_dir <- "data"
 results_dir <- "results"
+saABC_dir <- file.path(results_dir, "saABC")
+
 if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
+if (!dir.exists(saABC_dir)) dir.create(saABC_dir, recursive = TRUE)
 
 # ================================================================
 # Load observed datasets from Python
@@ -75,7 +78,7 @@ for (j in 1:100) {
 # Save results
 # ================================================================
 save(tab_models_M0, param_models_M0,
-     file = file.path(results_dir, "normal_saABC.RData"))
+     file = file.path(saABC_dir, "normal_saABC.RData"))
 
 # Compute posterior probabilities for Model 0
 prob_model0 <- tab_models_M0[, 1] / rowSums(tab_models_M0)
@@ -85,6 +88,5 @@ prob_model0_df <- data.frame(ObsID = 1:100, Prob_Model0 = prob_model0)
 param_model1_df <- data.frame(ObsID = 1:100, Mean_Mu_Model1 = param_models_M0[, 2])
 
 # Save both as CSVs
-write.csv(prob_model0_df, file.path(results_dir, "normal_model0_SA_probabilities.csv"), row.names = FALSE)
-write.csv(param_model1_df, file.path(results_dir, "normal_model0_SA_params.csv"), row.names = FALSE)
-
+write.csv(prob_model0_df, file.path(saABC_dir, "normal_model0_SA_probabilities.csv"), row.names = FALSE)
+write.csv(param_model1_df, file.path(saABC_dir, "normal_model0_SA_params.csv"), row.names = FALSE)

@@ -21,7 +21,8 @@ def simulate_datasets(n_sim=10**3, sample_size=100, prior_mu_var=100):
 
 def generate_observed_datasets(n_observed=100, sample_size=100, seed=123):
     np.random.seed(seed)
-    return np.array([np.random.normal(0, 1, sample_size) for _ in range(n_observed)])
+    return np.array([np.random.normal(0, 1, sample_size) for _ in range(n_observed)]) 
+#    return np.array([np.random.normal(0.1, 1, sample_size) for _ in range(n_observed)]) #Change to other mean
 
 # ========================
 # Main
@@ -30,11 +31,16 @@ def main():
     BASE_DIR = os.path.dirname(__file__)
     DATA_DIR = os.path.join(BASE_DIR, 'data')
     RESULTS_DIR = os.path.join(BASE_DIR, 'results')
+    DISTABC_DIR = os.path.join(RESULTS_DIR, 'distABC')
+
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
-
+    os.makedirs(DISTABC_DIR, exist_ok=True)
+    
     sample_size = 100
     n_sim = 10**6
+    #n_sim = 10**3
+    #n_observed = 2
     n_observed = 100
     percentiles = [0.1, 0.05, 0.01]
 
@@ -66,7 +72,7 @@ def main():
             prop_model0_summary[i, d_idx, :] = res[dist_name]['prop_model0']
             mean_mu_summary[i, d_idx, :] = res[dist_name]['mean_mu']
 
-    output_file = os.path.join(RESULTS_DIR, 'normal_example_m0_distanceABC_results.npz')
+    output_file = os.path.join(DISTABC_DIR, 'normal_example_m0_distanceABC_results.npz')
     np.savez(output_file, prop_model0=prop_model0_summary, mean_mu=mean_mu_summary, percentiles=percentiles, distance_names=distance_names)
     print(f"Results saved to {output_file}")
 

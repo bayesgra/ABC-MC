@@ -57,6 +57,7 @@ def main():
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
     n_simulations = 10**6
+    #n_simulations = 10**3
     output_dir = os.path.join(RESULTS_DIR, 'qdaABC')
     os.makedirs(output_dir, exist_ok=True)
 

@@ -52,18 +52,18 @@ pip install numpy scipy scikit-learn tensorflow joblib pandas
 Generates synthetic data, **creates `data/observed_datasets.npy`**, and performs ABC comparisons using several distances (CvM, MMD, Wasserstein, Stat).
 ```bash
 cd normal_example
-python normal_example_distanceABC.py
+python3 normal_example_distanceABC.py
 ```
 **Outputs:**
 - `data/observed_datasets.npy` — observed datasets for reuse.
-- `results/normal_example_m0.npz` — ABC summary results.
+- `results/distABC/normal_example_m0.npz` — ABC summary results.
 
 ---
 
 ### 2. **QDA-based ABC**
 Uses QDA-ABC to perform the comparison with distanceABC.
 ```bash
-python normal_example_qdaABC.py
+python3 normal_example_qdaABC.py
 ```
 **Reads:** `data/observed_datasets.npy`
 
@@ -91,13 +91,13 @@ Trains and evaluates a multi-task NN for simultaneous model and parameter estima
 
 #### Training:
 ```bash
-python normal_example_NN.py --train --epochs 10 --batch_size 32
+python3 normal_example_NN.py --train --epochs 10 --batch_size 32
 ```
 This trains a multi-task NN to jointly predict model class and parameter values.
 
 #### Prediction:
 ```bash
-python normal_example_NN.py --predict
+python3 normal_example_NN.py --predict
 ```
 **Reads:** `data/observed_datasets.npy`
 

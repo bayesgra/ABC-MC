@@ -41,8 +41,8 @@ def train_model(model, X, y_class, y_params, output_dir, epochs=10, batch_size=3
     res = model.evaluate(X_test, {'class_output': y_class_test, 'param_output': y_params_test}, verbose=0)
     print(f"Test Accuracy: {res[3]:.4f} | MAE: {res[4]:.4f}")
     os.makedirs(output_dir, exist_ok=True)
-    model.save(os.path.join(output_dir, 'normal_example_m0_NN_model.h5'))
-    print(f"Model saved in {output_dir}/normal_example_m0_NN_model.h5")
+    model.save(os.path.join(output_dir, 'normal_example_m0_NN_model.keras'))
+    print(f"Model saved in {output_dir}/normal_example_m0_NN_model.keras")
     return model
 
 def predict_observed(model_path, observed_path, output_dir):
@@ -89,7 +89,7 @@ def main():
         train_model(model, X, y_class, y_params, model_output, args.epochs, args.batch_size)
 
     if args.predict:
-        model_path = os.path.join(model_output, 'normal_example_m0_NN_model.h5')
+        model_path = os.path.join(model_output, 'normal_example_m0_NN_model.keras')
         if not os.path.exists(observed_path):
             raise FileNotFoundError(f"Observed data not found at {observed_path}. Run distanceABC first.")
         predict_observed(model_path, observed_path, model_output)
