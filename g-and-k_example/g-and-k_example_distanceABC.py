@@ -1,9 +1,9 @@
 import os, sys, numpy as np
 from multiprocessing import Pool, cpu_count
-from abc_utils import run_abc_for_one_observed, Distance, DISTANCE_LABELS
 
 # Import from parent directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from abc_utils import run_abc_for_one_observed, Distance, DISTANCE_LABELS
 
 def g_and_k_quantile(z, A=0, B=1, g=0, k=0, c=0.8):
     term1 = (1 + c * (1 - np.exp(-g * z)) / (1 + np.exp(-g * z)))
@@ -38,15 +38,19 @@ def main():
     BASE_DIR = os.path.dirname(__file__)
     DATA_DIR = os.path.join(BASE_DIR, 'data')
     RESULTS_DIR = os.path.join(BASE_DIR, 'results')
+    DISTABC_DIR = os.path.join(RESULTS_DIR, 'distABC')
+
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
+    os.makedirs(DISTABC_DIR, exist_ok=True)
 
     np.random.seed(42)
     n_observed, sample_size, n_sim = 100, 100, 10**6
+    #n_observed, sample_size, n_sim = 2, 100, 10**3
     percentiles = [0.1, 0.05, 0.01]
 
     print("Generating observed datasets...")
-    observed_datasets = np.array([sample_g_and_k(sample_size, g=0, k=2) for _ in range(n_observed)])
+    observed_datasets = np.array([sample_g_and_k(sample_size, g=0, k=2) for _ in range(n_observed)]) # Change this to g=1 for Model M1
     np.savez(os.path.join(DATA_DIR, 'observed_datasets.npz'), observed_datasets=observed_datasets)
     print(f" Saved observed datasets to {DATA_DIR}")
 
@@ -64,10 +68,18 @@ def main():
 
     for i, res in enumerate(all_results):
         for d_idx, dist_name in enumerate(distance_names):
-            prop_model_summary[i, d_idx, :] = res[dist_name]['prop_model']
-            mean_theta_summary[i, d_idx, :, :] = res[dist_name]['mean_theta']
+            for p_idx, _ in enumerate(percentiles):
+                # Extract dictionaries for this percentile
+                model_probs = res[dist_name]['model_probs'][p_idx]
+                theta_means = res[dist_name]['theta_means'][p_idx]
 
-    np.savez(os.path.join(RESULTS_DIR, 'gk_example_g0_distanceABC_results.npz'),
+                # There are two models: model 0 (no skew) and model 1 (skewed)
+                prop_model_summary[i, d_idx, p_idx] = model_probs.get(1, np.nan)
+                mean_theta_summary[i, d_idx, p_idx, 0] = theta_means.get(0, np.nan)
+                mean_theta_summary[i, d_idx, p_idx, 1] = theta_means.get(1, np.nan)
+
+
+    np.savez(os.path.join(DISTABC_DIR, 'gk_example_g0_distanceABC_results.npz'),
              prop_model=prop_model_summary,
              mean_theta=mean_theta_summary,
              percentiles=percentiles,

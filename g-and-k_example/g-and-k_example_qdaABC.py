@@ -131,11 +131,11 @@ def summarize_results(folder_path):
         mean_k_list.append(mean_k)
 
     # Save summary outputs
-    np.savetxt(os.path.join(folder_path, 'gk_example_QDA_probabilities.csv'),
+    np.savetxt(os.path.join(folder_path, 'gk_example_g0_QDA_probabilities.csv'),
                np.array(qda_frequencies), delimiter=',', header='QDA_Prob_Model0', comments='')
-    np.savetxt(os.path.join(folder_path, 'gk_example_QDA_mean_g.csv'),
+    np.savetxt(os.path.join(folder_path, 'gk_example_g0_QDA_mean_g.csv'),
                np.array(mean_g_list), delimiter=',', header='Mean_g_Model1', comments='')
-    np.savetxt(os.path.join(folder_path, 'gk_example_QDA_mean_k.csv'),
+    np.savetxt(os.path.join(folder_path, 'gk_example_g0_QDA_mean_k.csv'),
                np.array(mean_k_list), delimiter=',', header='Mean_k_Model1', comments='')
 
     print(f"Saved QDA summary results in {folder_path}")

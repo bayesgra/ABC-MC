@@ -7,14 +7,28 @@ library(reticulate)
 
 set.seed(1234)
 
+# ================================================================
+# Define input/output folders
+# ================================================================
+data_dir <- "data"
+results_dir <- "results"
+saABC_dir <- file.path(results_dir, "saABC")
+
+if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
+if (!dir.exists(saABC_dir)) dir.create(saABC_dir, recursive = TRUE)
+
+# ================================================================
 # Load observed datasets from .npz file
+# ================================================================
 np <- import("numpy")
 observed_npz <- np$load("data/observed_datasets.npz")
 X_observed <- observed_npz$f[["observed_datasets"]]  # shape: (num_obs, sample_size)
 num_obs <- dim(X_observed)[1]
 sample_size <- dim(X_observed)[2]
 
-# Matrix of simulated model parameter values.
+# ================================================================
+# Simulated parameter and summary statistics
+# ================================================================
 simulate_gk <- function(n, A = 0, B = 1, g = 0, k = 2, c = 0.8) {
   z <- rnorm(n)  # standard normal quantiles
   Q <- A + B * (1 + c * ((1 - exp(-g * z)) / (1 + exp(-g * z)))) * (1 + z^2)^k * z
@@ -43,10 +57,9 @@ for(i in 1:10^6)
   sim_ss[i,] <- sim_ss_iter[id] 
 }
 
-# ===============================
-# Semi-Automatic ABC: Exponential Data
-# ===============================
-
+# ================================================================
+# Semi-Automatic ABC analysis
+# ================================================================
 tab_models_M0 <- matrix(NA, ncol=2, nrow=num_obs)
 param_models_M0 <- matrix(NA, ncol=4, nrow=num_obs)
 
@@ -80,11 +93,14 @@ for(j in 1:num_obs) {
 # Save Results and Export Results to CSV
 # ========================================
 
+save(tab_models_M0, param_models_M0,
+     file = file.path(saABC_dir, "gk_example_g0_SA.RData"))
+
 prob_M0 <- matrix(tab_models_M0[,1]/1000, ncol=1)
 colnames(prob_M0) <- "SA"
-write.csv(prob_M0, "gk_example_g0_SA_probabilities.csv", row.names = FALSE)
+write.csv(prob_M0, file.path(saABC_dir, "gk_example_g0_SA_probabilities.csv"), row.names = FALSE)
 
 params_M0 <- param_models_M0
 colnames(params_M0) <- rep("SA", 4)
-write.csv(params_M0, "gk_example_g0_SA_theta.csv", row.names = FALSE)
+write.csv(params_M0, file.path(saABC_dir, "gk_example_g0_SA_theta.csv"), row.names = FALSE)
 

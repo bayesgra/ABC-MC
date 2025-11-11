@@ -25,16 +25,18 @@ project_root/
     ├── data/
     │   └── observed_datasets.npz
     └── results/
-        ├── gk_example_results.npz
+        ├── distABC/
+        │   ├── gk_example_g0_distanceABC_results.npz
         ├── qdaABC/
         │   ├── qda_simulations_obs_000.csv
-        │   ├── gk_QDA_probabilities.csv
-        │   └── gk_QDA_mean_theta.csv
+        │   ├── gk_example_g0_QDA_probabilities.csv
+        │   └── gk_example_g0_QDA_mean_g.csv
+        │   └── gk_example_g0_QDA_mean_k.csv        
         ├── saABC/
-        │   ├── gk_QDA_probabilities.csv
-        │   └── gk_QDA_mean_theta.csv
+        │   ├── gk_example_g0_SA_probabilities.csv
+        │   └── gk_example_g0_SA_params.csv
         └── NN/
-            ├── gk_model.h5
+            ├── gk_model.keras
             ├── gk_NN_probabilities.csv
             └── gk_NN_params.csv
 ```
@@ -57,24 +59,25 @@ Ensure that `abc_utils.py` is located **one directory above** the `g-and-k_examp
 Generates observed datasets and performs ABC comparisons using several distances (CvM, MMD, Wasserstein, Stat).
 ```bash
 cd g-and-k_example
-python g-and-k_example_distanceABC.py
+python3 g-and-k_example_distanceABC.py
 ```
 **Outputs:**
 - `data/observed_datasets.npz` — simulated observed datasets
-- `results/gk_example_results.npz` — ABC posterior summaries
+- `results/distABC/gk_example_g0_distanceABC_results.npz` — ABC posterior summaries
 
 ---
 
 ### 2. **QDA-based ABC**
 Uses QDA-ABC to perform the comparison with distanceABC.
 ```bash
-python g-and-k_example_qdaABC.py
+python3 g-and-k_example_qdaABC.py
 ```
 **Reads:** `data/observed_datasets.npz`
 
 **Outputs:**
-- `results/qdaABC/gk_QDA_probabilities.csv`
-- `results/qdaABC/gk_QDA_mean_theta.csv`
+- `results/qdaABC/gk_example_g0_QDA_probabilities.csv`
+- `results/qdaABC/gk_example_g0_QDA_mean_g.csv`
+- `results/qdaABC/gk_example_g0_QDA_mean_k.csv`
 
 ---
 
@@ -96,16 +99,16 @@ Trains and evaluates a multi-task NN for simultaneous model and parameter estima
 
 #### Train:
 ```bash
-python g-and-k_example_NN.py --train --epochs 10 --batch_size 32
+python3 g-and-k_example_NN.py --train --epochs 10 --batch_size 32
 ```
 #### Predict:
 ```bash
-python g-and-k_example_NN.py --predict
+python3 g-and-k_example_NN.py --predict
 ```
 **Reads:** `data/observed_datasets.npz`
 
 **Outputs:**
-- `results/NN/gk_model.h5` — trained NN model
+- `results/NN/gk_model.keras` — trained NN model
 - `results/NN/gk_NN_probabilities.csv` — predicted model probabilities
 - `results/NN/gk_NN_params.csv` — predicted parameters
 
