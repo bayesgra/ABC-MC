@@ -21,13 +21,18 @@ project_root/
     ├── data/
     │   └── observed_datasets.npz
     └── results/
-        ├── expo_family_results.npz
+        ├── distABC/
+        │   ├── expo_family_exp_results.npz   
         ├── qdaABC/
         │   ├── qda_simulations_obs_000.csv
-        │   ├── expo_family_QDA_probabilities.csv
-        │   └── expo_family_QDA_mean_theta.csv
+        │   ├── expo_family_exp_QDA_probabilities.csv
+        │   └── expo_family_exp_QDA_mean_theta.csv
+        ├── saABC/
+        │   ├── expo_family_exp_SA.RData
+        │   ├── expo_family_exp_SA_probabilities.csv
+        │   └── expo_family_exp_SA_mean_mu.csv       
         └── NN/
-            ├── expo_family_model.h5
+            ├── expo_family_model.keras
             ├── expo_family_NN_probabilities.csv
             └── expo_family_NN_params.csv
 ```
@@ -48,24 +53,24 @@ pip install numpy scipy scikit-learn tensorflow joblib pandas
 Generates observed datasets and performs ABC simulations.
 ```bash
 cd expo_family_example
-python expo_family_example_distanceABC.py
+python3 expo_family_example_distanceABC.py
 ```
 **Outputs:**
 - `data/observed_datasets.npz` — simulated observed datasets
-- `results/expo_family_results.npz` — ABC posterior summaries
+- `results/distABC/expo_family_results.npz` — ABC posterior summaries
 
 ---
 
 ### 2. **QDA-based ABC**
 Uses QDA-ABC to perform the comparison with distanceABC.
 ```bash
-python expo_family_example_qdaABC.py
+python3 expo_family_example_qdaABC.py
 ```
 **Reads:** `data/observed_datasets.npz`
 
 **Outputs:**
-- `results/qdaABC/expo_family_QDA_probabilities.csv`
-- `results/qdaABC/expo_family_QDA_mean_theta.csv`
+- `results/qdaABC/expo_family_exp_QDA_probabilities.csv`
+- `results/qdaABC/expo_family_exp_QDA_mean_theta.csv`
 
 ---
 
@@ -77,8 +82,8 @@ R expo_family_example_saABC.R
 **Reads:** `data/observed_datasets.npz`
 
 **Outputs:**
-- `results/saABC/expo_family_SA_probabilities.csv`
-- `results/saABC/expo_family_SA_mean_theta.csv`
+- `results/saABC/expo_family_exp_SA_probabilities.csv`
+- `results/saABC/expo_family_exp_SA_mean_theta.csv`
 
 ---
 
@@ -87,16 +92,16 @@ Trains and evaluates a multi-task NN for simultaneous model and parameter estima
 
 #### Train:
 ```bash
-python expo_family_example_NN.py --train --epochs 10 --batch_size 32
+python3 expo_family_example_NN.py --train --epochs 10 --batch_size 32
 ```
 #### Predict:
 ```bash
-python expo_family_example_NN.py --predict
+python3 expo_family_example_NN.py --predict
 ```
 **Reads:** `data/observed_datasets.npz`
 
 **Outputs:**
-- `results/NN/expo_family_model.h5` — trained model
+- `results/NN/expo_family_model.keras` — trained model
 - `results/NN/expo_family_NN_probabilities.csv` — predicted model probabilities
 - `results/NN/expo_family_NN_params.csv` — estimated parameters
 

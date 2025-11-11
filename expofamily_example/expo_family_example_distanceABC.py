@@ -18,7 +18,7 @@ def stat_distance(observed_data, simulated_data):
 
 def generate_observed_datasets(n_observed=100, sample_size=100, seed=42, save_path="data/observed_datasets.npz"):
     np.random.seed(seed)
-    observed_datasets = np.random.exponential(scale=2.0, size=(n_observed, sample_size))
+    observed_datasets = np.random.exponential(scale=2.0, size=(n_observed, sample_size)) # Change this to lognormal or gamma distribution for Model M2 and M3
     np.savez(save_path, observed_datasets=observed_datasets)
     print(f" Saved {n_observed} observed datasets to '{save_path}'")
     return observed_datasets
@@ -52,8 +52,8 @@ def main():
     np.random.seed(42)
     random.seed(42)
 
-#    n_observed, sample_size, n_sim = 100, 100, 10**6
-    n_observed, sample_size, n_sim = 2, 100, 10**3
+    n_observed, sample_size, n_sim = 100, 100, 10**6
+    #n_observed, sample_size, n_sim = 2, 100, 10**3
     percentiles = [0.1, 0.05, 0.01]
 
     observed_datasets = generate_observed_datasets(

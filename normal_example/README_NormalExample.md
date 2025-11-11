@@ -23,16 +23,18 @@ project_root/
 │   ├── data/
 │   │   └── observed_datasets.npy
 │   └── results/
-│       ├── normal_example_m0.npz
+│       ├── distABC/
+│       │   ├── normal_example_m0.npz
 │       ├── qdaABC/
 │       │   ├── qda_simulations_obs_000.csv
 │       │   ├── normal_model0_QDA_probabilities.csv
 │       │   └── normal_model0_QDA_mean_mu.csv
 │       ├── saABC/
+│       │   ├── normal_model0_SA.RData
 │       │   ├── normal_model0_SA_probabilities.csv
 │       │   └── normal_model0_SA_mean_mu.csv
 │       └── NN/
-│           ├── normal_model.h5
+│           ├── normal_model.keras
 │           ├── NN_probabilities.csv
 │           └── NN_params.csv
 ```
@@ -102,7 +104,7 @@ python3 normal_example_NN.py --predict
 **Reads:** `data/observed_datasets.npy`
 
 **Outputs:**
-- `results/NN/normal_model.h5` — trained model.
+- `results/NN/normal_model.keras` — trained model.
 - `results/NN/NN_probabilities.csv` — predicted model 0 probabilities.
 - `results/NN/NN_params.csv` — estimated parameters.
 
