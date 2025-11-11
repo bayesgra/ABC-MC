@@ -102,5 +102,5 @@ write.csv(prob_M0, file.path(saABC_dir, "gk_example_g0_SA_probabilities.csv"), r
 
 params_M0 <- param_models_M0
 colnames(params_M0) <- rep("SA", 4)
-write.csv(params_M0, file.path(saABC_dir, "gk_example_g0_SA_theta.csv"), row.names = FALSE)
+write.csv(params_M0, file.path(saABC_dir, "gk_example_g0_SA_params.csv"), row.names = FALSE)
 
