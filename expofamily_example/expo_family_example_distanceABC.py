@@ -43,13 +43,17 @@ def main():
     BASE_DIR = os.path.dirname(__file__)
     DATA_DIR = os.path.join(BASE_DIR, 'data')
     RESULTS_DIR = os.path.join(BASE_DIR, 'results')
+    DISTABC_DIR = os.path.join(RESULTS_DIR, 'distABC')
+
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
+    os.makedirs(DISTABC_DIR, exist_ok=True)
 
     np.random.seed(42)
     random.seed(42)
 
-    n_observed, sample_size, n_sim = 100, 100, 10**6
+#    n_observed, sample_size, n_sim = 100, 100, 10**6
+    n_observed, sample_size, n_sim = 2, 100, 10**3
     percentiles = [0.1, 0.05, 0.01]
 
     observed_datasets = generate_observed_datasets(
@@ -78,13 +82,13 @@ def main():
                     model_probs_summary[i, d_idx, p_idx, m] = model_probs.get(m, 0.0)
                     theta_means_summary[i, d_idx, p_idx, m] = theta_means.get(m, np.nan)
 
-    np.savez(os.path.join(RESULTS_DIR, 'expofamily_example_exp_distanceABC_results.npz'),
+    np.savez(os.path.join(DISTABC_DIR, 'expofamily_example_exp_distanceABC_results.npz'),
              model_probs=model_probs_summary,
              theta_means=theta_means_summary,
              percentiles=percentiles,
              distance_names=distance_names,
              model_labels=["Expo", "LogN", "Gamma"])
-    print(f"ABC results saved in {RESULTS_DIR}")
+    print(f"ABC results saved in {DISTABC_DIR}")
 
 if __name__ == "__main__":
     main()

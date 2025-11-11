@@ -37,6 +37,9 @@ def main():
     os.makedirs(RESULTS_DIR, exist_ok=True)
     os.makedirs(DISTABC_DIR, exist_ok=True)
     
+    np.random.seed(42)
+    random.seed(42)
+
     sample_size = 100
     n_sim = 10**6
     #n_sim = 10**3

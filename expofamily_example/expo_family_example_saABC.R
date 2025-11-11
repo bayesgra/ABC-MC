@@ -12,7 +12,10 @@ set.seed(1234)
 # ================================================================
 data_dir <- "data"
 results_dir <- "results"
+saABC_dir <- file.path(results_dir, "saABC")
+
 if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
+if (!dir.exists(saABC_dir)) dir.create(saABC_dir, recursive = TRUE)
 
 # ================================================================
 # Load observed datasets from .npz file
@@ -94,13 +97,13 @@ for (j in 1:100) {
 # Save results to results/ folder
 # ================================================================
 save(tab_models_exp, param_models_exp,
-     file = file.path(results_dir, "expo_family_SA.RData"))
+     file = file.path(saABC_dir, "expo_family_SA.RData"))
 
 prob_expo <- matrix(tab_models_exp[, 1] / 1000, ncol = 1)
 colnames(prob_expo) <- "SA"
-write.csv(prob_expo, file.path(results_dir, "expo_family_exp_SA_probabilities.csv"), row.names = FALSE)
+write.csv(prob_expo, file.path(saABC_dir, "expo_family_exp_SA_probabilities.csv"), row.names = FALSE)
 
 params_expo <- matrix(param_models_exp[, 1], ncol = 1)
 colnames(params_expo) <- "SA"
-write.csv(params_expo, file.path(results_dir, "expo_family_exp_SA_params.csv"), row.names = FALSE)
+write.csv(params_expo, file.path(saABC_dir, "expo_family_exp_SA_params.csv"), row.names = FALSE)
 

@@ -63,8 +63,8 @@ def maximum_mean_discrepancy(obs, sim, obs_sq_dist=None, sigma=None):
 # ========================
 def compute_distances(observed_sample, sims):
     n_sim = sims.shape[0]
-    obs_sq_dist = pdist(observed_sample.reshape(-1,1), 'sqeuclidean')
-    sigma = np.median(obs_sq_dist)**0.5
+    obs_sq_dist = pdist(observed_sample.reshape(-1, 1), 'sqeuclidean')
+    sigma = np.median(obs_sq_dist) ** 0.5
     distances = {name: np.zeros(n_sim) for name in DISTANCE_LABELS.values()}
     for i in range(n_sim):
         sim_sample = sims[i]
@@ -74,23 +74,43 @@ def compute_distances(observed_sample, sims):
         distances['Stat'][i] = stat_distance(observed_sample, sim_sample)
     return distances
 
-def summarize_percentile(mus, models, distances, percentile):
+
+def summarize_percentile(theta, models, distances, percentile):
+    """
+    Compute posterior model probabilities and mean parameter estimates
+    for each model given the ABC tolerance percentile.
+    Works automatically for any number of models.
+    """
     n = len(distances)
     k = max(1, round(n * percentile / 100))
-    indices = np.argsort(distances)[:k]
-    selected_mus, selected_models = mus[indices], models[indices]
-    return np.mean(selected_models == 0), np.mean(selected_mus)
+    idx = np.argsort(distances)[:k]
+    selected_models = models[idx]
+    selected_theta = theta[idx]
+
+    model_probs, theta_means = {}, {}
+    unique_models = np.unique(models)
+    for m in unique_models:
+        mask = selected_models == m
+        model_probs[m] = np.mean(mask)
+        theta_means[m] = np.mean(selected_theta[mask]) if np.any(mask) else np.nan
+    return model_probs, theta_means
+
 
 def run_abc_for_one_observed(args):
-    observed_sample, sims, mus, models, percentiles = args
+    """
+    General-purpose ABC runner that supports any number of models.
+    Returns nested dictionaries with posterior model probabilities
+    and mean parameter estimates for each distance and percentile.
+    """
+    observed_sample, sims, theta, models, percentiles = args
     distances = compute_distances(observed_sample, sims)
     results = {}
+
     for dist_enum in Distance:
         dist_name = DISTANCE_LABELS[dist_enum]
-        results[dist_name] = {'prop_model0': [], 'mean_mu': []}
+        results[dist_name] = {'model_probs': [], 'theta_means': []}
         for perc in percentiles:
-            prop0, mean_mu = summarize_percentile(mus, models, distances[dist_name], perc)
-            results[dist_name]['prop_model0'].append(prop0)
-            results[dist_name]['mean_mu'].append(mean_mu)
+            model_probs, theta_means = summarize_percentile(theta, models, distances[dist_name], perc)
+            results[dist_name]['model_probs'].append(model_probs)
+            results[dist_name]['theta_means'].append(theta_means)
     return results
-
