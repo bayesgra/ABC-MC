@@ -9,7 +9,10 @@ set.seed(1234)
 # -----------------------------
 data_dir <- "data"
 results_dir <- "results"
+saABC_dir <- file.path(results_dir, "saABC")
+
 if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
+if (!dir.exists(saABC_dir)) dir.create(saABC_dir, recursive = TRUE)
 
 # -----------------------------
 # Load observed datasets (.npz)
@@ -18,13 +21,14 @@ np <- import("numpy")
 obs_npz <- np$load(file.path(data_dir, "observed_datasets.npz"), allow_pickle = TRUE)
 obs_list <- obs_npz$f[["observed_datasets"]]   # shape: (n_obs, num_days, num_toads)
 n_obs <- dim(obs_list)[1]
+dim(observed_datasets)
 
 # -----------------------------
 # Load simulation summaries/params (if you use them)
 #   Adjust paths/columns to your setup
 # -----------------------------
-sim_ss <- read.csv("toad_simulated_stats.csv", header = TRUE)
-theta  <- read.csv("toad_simulated_param.csv", header = TRUE)
+sim_ss <- read.csv("data/toad_simulated_stats.csv", header = TRUE)
+theta  <- read.csv("data/toad_simulated_param.csv", header = TRUE)
 # If distance model lacks d0 in some rows, fill with 0 to keep a consistent matrix
 if (!"d0" %in% names(theta)) theta$d0 <- NA_real_
 theta$d0 <- ifelse(is.na(theta$d0), 0, theta$d0)
@@ -36,27 +40,10 @@ tot <- stats::na.omit(tot)
 sim_ss <- tot[, seq_len(ncol(sim_ss)), drop = FALSE]
 theta  <- tot[, (ncol(sim_ss) + 1):ncol(tot), drop = FALSE]
 
-# Optional: select a subset of stats (example)
-all_stat_idx <- seq_len(ncol(sim_ss))
-id <- sample(all_stat_idx, size = min(20, ncol(sim_ss)), replace = FALSE)
-sim_ss <- sim_ss[, id, drop = FALSE]
-
 # -----------------------------
 # Make summaries for observed data to match sim_ss columns
 # (Example: per-toad mean and variance, then select 'id' subset)
 # -----------------------------
-summarize_obs <- function(one_obs) {
-  # one_obs: matrix (num_days x num_toads)
-  means <- apply(one_obs, 2, mean)
-  vars  <- apply(one_obs, 2, var)
-  stats <- c(means, vars)
-  # pad if needed (rare) and then subset:
-  if (length(stats) < ncol(tot) - ncol(theta)) {
-    stats <- c(stats, rep(NA_real_, (ncol(tot) - ncol(theta)) - length(stats)))
-  }
-  stats[id]
-}
-
 obs_summary <- t(apply(obs_list, 1, summarize_obs))
 colnames(obs_summary) <- colnames(sim_ss)
 

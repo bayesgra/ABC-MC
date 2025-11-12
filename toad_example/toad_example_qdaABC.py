@@ -2,33 +2,57 @@ import os, sys, csv, numpy as np, pandas as pd
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.metrics import accuracy_score
 from joblib import Parallel, delayed
-import toad_utils
+from toad_utils import *
 
 # ================================================================
 # Import shared utilities
 # ================================================================
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import abc_utils
+from abc_utils import *
 
 
 # ================================================================
 # QDA simulation for one observed dataset
 # ================================================================
+def flatten_summary(summary_dict, target_dim=48):
+    """Flatten nested summary dicts into a fixed-length 1D numeric vector."""
+    flat_values = []
+
+    def _recursive_flatten(d):
+        for v in d.values():
+            if isinstance(v, dict):
+                _recursive_flatten(v)
+            elif isinstance(v, (list, tuple, np.ndarray)):
+                flat_values.extend(np.ravel(v).tolist())
+            else:
+                flat_values.append(v)
+
+    _recursive_flatten(summary_dict)
+
+    arr = np.array(flat_values, dtype=float)
+
+    # Truncate or pad to fixed dimension
+    if len(arr) > target_dim:
+        arr = arr[:target_dim]
+    elif len(arr) < target_dim:
+        arr = np.pad(arr, (0, target_dim - len(arr)), mode="constant", constant_values=np.nan)
+
+    return arr
+
 def simulate_for_observed(obs_data, obs_id, n_simulations):
     rng = np.random.default_rng(obs_id)
-    obs_labels = np.zeros(len(obs_data))
+    obs_summary = flatten_summary(compute_displacement_summaries(obs_data))
 
     def simulate_once(seed):
         rng = np.random.default_rng(seed)
         dist_type = rng.integers(0, 3)  # 0=RANDOM, 1=NEAREST, 2=DISTANCE
 
-        # Sample parameters (simulate variability)
         alpha = rng.uniform(1.0, 2.0)
         gamma = rng.uniform(0.0, 1.0)
         p0 = rng.uniform(0.2, 0.5)
         d0 = rng.uniform(0.5, 2.0) if dist_type == 2 else None
 
-        # Generate simulated data
+        # simulate movement data
         if dist_type == 0:
             sim_data = toad_movement_sample("random", alpha, gamma, p0)
         elif dist_type == 1:
@@ -36,34 +60,37 @@ def simulate_for_observed(obs_data, obs_id, n_simulations):
         else:
             sim_data = toad_movement_sample("distance", alpha, gamma, p0, d0=d0)
 
-        # Train QDA classifier
-        X = np.concatenate([obs_data, sim_data]).reshape(-1, 1)
-        y = np.concatenate([obs_labels, np.ones(len(sim_data))])
-        qda = QuadraticDiscriminantAnalysis()
-        qda.fit(X, y)
-        acc = accuracy_score(y, qda.predict(X))
+        sim_summary = flatten_summary(compute_displacement_summaries(sim_data))
+
+        # compute Euclidean distance between observed and simulated summaries
+        dist = np.linalg.norm(np.nan_to_num(obs_summary) - np.nan_to_num(sim_summary))
+        # convert distance to similarity score
+        similarity = np.exp(-dist / np.nanmean(np.abs(obs_summary) + 1e-8))
 
         params = [alpha, gamma, p0] if dist_type in [0, 1] else [alpha, gamma, p0, d0]
-        return acc, dist_type, params
+        return similarity, dist_type, params
 
+    # run simulations in parallel
     results = Parallel(n_jobs=-1)(delayed(simulate_once)(i) for i in range(n_simulations))
 
-    accuracies = np.array([r[0] for r in results])
+    # rank by similarity (higher is better)
+    similarities = np.array([r[0] for r in results])
     dist_types = np.array([r[1] for r in results])
-    threshold = np.percentile(accuracies, 10)
-    idx = np.where(accuracies <= threshold)[0]
+
+    # select top 1% (ABC-like acceptance)
+    threshold = np.percentile(similarities, 99)
+    idx = np.where(similarities >= threshold)[0]
 
     selected = [results[i] for i in idx]
     print(f"Obs {obs_id:03d}: selected {len(selected)} / {n_simulations}")
 
-    # Each row: obs_id, accuracy, model_id, params...
+    # store accepted samples
     output = []
-    for acc, m, params in selected:
-        row = [obs_id, acc, m] + params
+    for sim, m, params in selected:
+        row = [obs_id, sim, m] + params
         output.append(row)
     return output
-
-
+    
 # ================================================================
 # Summarize QDA results into probabilities + parameter means
 # ================================================================
