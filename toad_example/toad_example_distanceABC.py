@@ -30,25 +30,58 @@ def main():
     # ================================================================
     #  Parameters
     # ================================================================
-    n_observed = 100
-    n_simulations = 100_000
+    n_observed = 2
+    n_simulations = 1_000
+#    n_observed = 100
+#    n_simulations = 100_000
     percentiles = [0.01, 0.005, 0.001]
+    n_summaries = 48
+    param_cols = ["alpha", "gamma", "p0", "d0"]
 
     # ================================================================
-    #  Step 1: Simulate training data
+    #  Helper: flatten summary dictionary to vector of length 48
+    # ================================================================
+    def _flatten_summary(summary, target_dim=n_summaries):
+        vals = []
+
+        def _rec(v):
+            if isinstance(v, dict):
+                for vv in v.values():
+                    _rec(vv)
+            elif isinstance(v, (list, tuple, np.ndarray)):
+                vals.extend(np.ravel(v).tolist())
+            else:
+                vals.append(v)
+
+        _rec(summary)
+        arr = np.asarray(vals, dtype=float)
+        if arr.size > target_dim:
+            arr = arr[:target_dim]
+        elif arr.size < target_dim:
+            arr = np.pad(arr, (0, target_dim - arr.size), mode="constant", constant_values=np.nan)
+        return arr
+
+    # ================================================================
+    #  Step 1: Simulate ABC datasets
     # ================================================================
     print("Generating simulations...")
     sim_summaries, thetas, models = simulate_datasets_parallel(n_sim=n_simulations)
 
+    # Flatten simulated summaries
+    sim_summ_list = np.array([_flatten_summary(s) for s in sim_summaries])
+
     # ---- Save simulated summaries and parameters ----
     sim_stats_path = os.path.join(DATA_DIR, "toad_simulated_stats.csv")
-    sim_param_path = os.path.join(DATA_DIR, "toad_simulated_param.csv")
+    sim_theta_path = os.path.join(DATA_DIR, "toad_simulated_theta.csv")
 
-    pd.DataFrame(sim_summaries).to_csv(sim_stats_path, index=False)
-    pd.DataFrame(thetas, columns=["alpha", "gamma", "p0", "d0"]).to_csv(sim_param_path, index=False)
+    pd.DataFrame(sim_summ_list, columns=[f"S{i+1}" for i in range(n_summaries)]).to_csv(sim_stats_path, index=False)
+
+    sim_theta_df = pd.DataFrame(thetas, columns=param_cols)
+    sim_theta_df["model"] = models
+    sim_theta_df.to_csv(sim_theta_path, index=False)
 
     print(f"Saved simulated summaries to {sim_stats_path}")
-    print(f"Saved simulated parameters to {sim_param_path}")
+    print(f"Saved simulated parameters (with model column) to {sim_theta_path}")
 
     # ================================================================
     #  Step 2: Generate or load observed datasets
@@ -66,34 +99,13 @@ def main():
         np.savez(observed_path, observed_datasets=np.array(observed_raw))
         print(f"Saved {len(observed_raw)} observed datasets to {observed_path}")
 
-    # ---- Compute and save 48-d summaries for observed datasets ----
-    def _flatten_summary(summary_dict, target_dim=48):
-        vals = []
-        def _rec(d):
-            for v in d.values():
-                if isinstance(v, dict):
-                    _rec(v)
-                elif isinstance(v, (list, tuple, np.ndarray)):
-                    vals.extend(np.ravel(v).tolist())
-                else:
-                    vals.append(v)
-        _rec(summary_dict)
-        arr = np.asarray(vals, dtype=float)
-        if arr.size > target_dim:
-            arr = arr[:target_dim]
-        elif arr.size < target_dim:
-            arr = np.pad(arr, (0, target_dim - arr.size), mode="constant", constant_values=np.nan)
-        return arr
-
-    obs_summ_list = []
-    for obs in observed_raw:
-        s = compute_displacement_summaries(obs)
-        obs_summ_list.append(_flatten_summary(s, 48))
-
-    obs_summ_df = pd.DataFrame(obs_summ_list, columns=[f"S{i+1}" for i in range(48)])
+    # Compute and save summaries for observed datasets
+    obs_summ_list = [_flatten_summary(compute_displacement_summaries(obs)) for obs in observed_raw]
+    obs_summ_df = pd.DataFrame(obs_summ_list, columns=[f"S{i+1}" for i in range(n_summaries)])
     obs_stats_path = os.path.join(DATA_DIR, "toad_observed_stats.csv")
     obs_summ_df.to_csv(obs_stats_path, index=False)
-    print(f"Saved observed 48-dim summaries to {obs_stats_path}")
+
+    print(f"Saved {len(obs_summ_df)} observed datasets (48 summaries each) to {obs_stats_path}")
 
     # ================================================================
     #  Step 3: Run ABC in parallel
@@ -117,11 +129,11 @@ def main():
     # ================================================================
     distance_names = list(DISTANCE_LABELS.values())
     n_dist, n_perc = len(distance_names), len(percentiles)
-    n_models = len(np.unique(models)) 
-    
+    n_models = len(np.unique(models))
+
     model_probs_summary = np.zeros((n_observed, n_dist, n_perc, n_models))
     theta_means_summary = np.zeros((n_observed, n_dist, n_perc, n_models))
-    
+
     for i, res in enumerate(all_results):
         for d_idx, dist_name in enumerate(distance_names):
             for p_idx in range(n_perc):

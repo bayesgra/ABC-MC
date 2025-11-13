@@ -15,44 +15,27 @@ if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
 if (!dir.exists(saABC_dir)) dir.create(saABC_dir, recursive = TRUE)
 
 # -----------------------------
-# Load observed datasets (.npz)
+# Load observed datasets (summary statistics)
 # -----------------------------
-np <- import("numpy")
-obs_npz <- np$load(file.path(data_dir, "observed_datasets.npz"), allow_pickle = TRUE)
-obs_list <- obs_npz$f[["observed_datasets"]]   # shape: (n_obs, num_days, num_toads)
-n_obs <- dim(obs_list)[1]
-dim(observed_datasets)
+obs_ss <- read.csv("./data/toad_observed_stats.csv", header = TRUE)
+n_obs <- nrow(obs_ss)
 
 # -----------------------------
 # Load simulation summaries/params (if you use them)
-#   Adjust paths/columns to your setup
+# + observed summaries
 # -----------------------------
-sim_ss <- read.csv("data/toad_simulated_stats.csv", header = TRUE)
-theta  <- read.csv("data/toad_simulated_param.csv", header = TRUE)
-# If distance model lacks d0 in some rows, fill with 0 to keep a consistent matrix
-if (!"d0" %in% names(theta)) theta$d0 <- NA_real_
-theta$d0 <- ifelse(is.na(theta$d0), 0, theta$d0)
-
-# drop any rows with NA across sim_ss+theta
-stopifnot(nrow(sim_ss) == nrow(theta))
-tot <- cbind(sim_ss, theta)
-tot <- stats::na.omit(tot)
-sim_ss <- tot[, seq_len(ncol(sim_ss)), drop = FALSE]
-theta  <- tot[, (ncol(sim_ss) + 1):ncol(tot), drop = FALSE]
-
-# -----------------------------
-# Make summaries for observed data to match sim_ss columns
-# (Example: per-toad mean and variance, then select 'id' subset)
-# -----------------------------
-obs_summary <- t(apply(obs_list, 1, summarize_obs))
-colnames(obs_summary) <- colnames(sim_ss)
+sim_ss <- read.csv("./data/toad_simulated_stats.csv", header = TRUE)
+theta  <- read.csv("./data/toad_simulated_theta.csv", header = TRUE)
+model_ss <- theta[,5]
+theta <- theta[,1:4]
+# Substitute D0 with 0 when model is not Distance
+theta[,4] <- ifelse(is.na(theta[,4])==T,0,theta[,4])
 
 # -----------------------------
 # SA-ABC per observed dataset
 # -----------------------------
 # Expect theta to have columns like: alpha, gamma, p0, d0, M (model id)
 # Where M in {0=RANDOM, 1=NEAREST, 2=DISTANCE}
-stopifnot("M" %in% names(theta))
 model_names <- c("Random", "Nearest", "Distance")
 
 prob_mat   <- matrix(NA_real_, nrow = n_obs, ncol = 3)
@@ -62,11 +45,11 @@ param_mat  <- matrix(NA_real_, nrow = n_obs, ncol = 4)  # Alpha, Gamma, P0, D0
 colnames(param_mat) <- c("Alpha", "Gamma", "P0", "D0")
 
 for (j in seq_len(n_obs)) {
-  obs_ss <- matrix(obs_summary[j, ], nrow = 1)
-  colnames(obs_ss) <- colnames(sim_ss)
+  obs_ss_temp <- matrix(obs_ss[j, ], nrow = 1)
+  colnames(obs_ss_temp) <- colnames(sim_ss)
   
   tmp <- selectsumm(
-    obs_ss, theta, sim_ss,
+    obs_ss_temp, theta, sim_ss,
     ssmethod = AS.select,
     tol = 0.001,
     method = "rejection",
